@@ -2,20 +2,14 @@ import cv2
 import mediapipe as mp
 import random
 import time
+import data
+from data import question_bank
 
 # Initialize Mediapipe Hands
-mp_hands = mp.solutions.hands
-hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7)
-mp_draw = mp.solutions.drawing_utils
+mp_hands = mp.solutions.hands # Imports the hand tracking solution for detecting and tracking hands.
+hands = mp_hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.7) # Initializes the hand tracking model with specified detection and tracking confidence thresholds.
+mp_draw = mp.solutions.drawing_utils # Sets up utilities for drawing the detected hand landmarks and connections on frames for visualization.
 
-# Define questions and answers
-questions = [
-    {"question": "Python is a programming language?", "answer": "True"},
-    {"question": "The capital of France is Berlin?", "answer": "False"},
-    {"question": "The Sun rises in the west?", "answer": "False"},
-    {"question": "OpenCV is used for computer vision?", "answer": "True"},
-    {"question": "2 + 2 = 5?", "answer": "False"}
-]
 
 # Function to detect gestures (Thumbs-Up or Thumbs-Down)
 def detect_gesture(hand_landmarks):
@@ -35,19 +29,21 @@ def detect_gesture(hand_landmarks):
 
 # Main game logic
 def quiz_game():
-    cap = cv2.VideoCapture(0)  # Open webcam
+    cap = cv2.VideoCapture(0)  # Open default webcam
     score = 0  # Initialize score
     question_index = 0  # Current question index
 
     # Display each question for 10 seconds
     time_limit = 10
 
-    while question_index < len(questions):
-        question = questions[question_index]
+    while question_index < len(question_bank):
+        questions = question_bank[question_index]
         start_time = time.time()
 
         while time.time() - start_time < time_limit:
+            print(time.time() - start_time)
             ret, frame = cap.read()  # Read frame from webcam
+            frame = cv2.resize(frame, (1500, 800))
             if not ret:
                 print("Failed to capture video")
                 break
@@ -55,9 +51,11 @@ def quiz_game():
             frame = cv2.flip(frame, 1)  # Flip the frame for a mirrored view
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Convert to RGB for Mediapipe
             results = hands.process(rgb_frame)  # Process the frame with Mediapipe
-
+            #print(question_bank[0]['question'])
+            #print(question_bank[question_index]['Question'])
+            
             # Display the question
-            cv2.putText(frame, f"Question: {question['question']}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            cv2.putText(frame, f"Question{question_index+1} {questions['Question']}", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
             cv2.putText(frame, "Show Thumbs-Up for True, Thumbs-Down for False", (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 0), 2)
 
             # If hands are detected
@@ -73,19 +71,16 @@ def quiz_game():
                     cv2.putText(frame, f"Detected Gesture: {gesture}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
                     # Check if gesture matches the answer
-                    if gesture == question["answer"]:
+                    if gesture == questions['Answer']:
                         score += 1
-                        question_index += 1
                         cv2.putText(frame, "Correct!", (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
-                        time.sleep(1)  # Pause to show feedback
+                        time.sleep(1)  # Time delay to give feedback
                         break
-                    elif gesture != question["answer"]:
-                        question_index += 1
+                    elif gesture != questions['Answer']:
                         cv2.putText(frame, "Incorrect!", (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
-                        time.sleep(1)  # Pause to show feedback
+                        time.sleep(1)  # Time delay to give feedback
                         break
 
-            # Show the frame
             cv2.imshow("Quiz Game", frame)
 
             # Exit the game on 'q' key press
@@ -98,7 +93,7 @@ def quiz_game():
     cv2.destroyAllWindows()
 
     # Display the final score
-    print(f"Game Over! Your final score is {score}/{len(questions)}")
+    print(f"Game Over! Your final score is {score}/{len(question_bank)}")
 
 # Run the game
 if __name__ == "__main__":
