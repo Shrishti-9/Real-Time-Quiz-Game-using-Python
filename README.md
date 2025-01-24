@@ -1,1 +1,1 @@
-# Real-Time-Quiz-Game-using-Python
+This project is about Real-Time Quiz Game using OpenCV and Mediapipe for gesture recognition. This project uses the webcam to detect gestures and allows the player to answer True/False questions based on them.
